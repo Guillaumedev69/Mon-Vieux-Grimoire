@@ -11,6 +11,7 @@ exports.createBook = (req, res, next) => {
     imageUrl: `${req.protocol}://${req.get("host")}/images/${
       req.file.filename
     }`,
+    averageRating: bookObject.ratings[0].grade,
   });
   book
     .save()
@@ -19,6 +20,53 @@ exports.createBook = (req, res, next) => {
     })
     .catch((error) => {
       res.status(400).json({ error });
+    });
+};
+
+exports.createRating = (req, res, next) => {
+  const { rating } = req.body;
+  const userId = req.auth.userId;
+
+  if (rating < 1 || rating > 5) {
+    return res
+      .status(400)
+      .json({ message: "La note doit être comprise entre 1 et 5" });
+  }
+
+  Book.findById(req.params.id)
+    .then((book) => {
+      if (!book) {
+        throw new Error("Livre non trouvé");
+      }
+
+      const alreadyRated = book.ratings.some((r) => r.userId === userId);
+      if (alreadyRated) {
+        throw new Error("Vous avez déjà noté ce livre");
+      }
+
+      book.ratings.push({ userId, grade: rating });
+
+      const totalGrades = book.ratings.reduce(
+        (sum, rating) => sum + rating.grade,
+        0
+      );
+      book.averageRating = (totalGrades / book.ratings.length).toFixed(1);
+
+      return book.save();
+    })
+    .then((savedBook) => {
+      res.status(201).json(savedBook);
+    })
+    .catch((error) => {
+      if (error.message === "Livre non trouvé") {
+        return res.status(404).json({ message: error.message });
+      }
+      if (error.message === "Vous avez déjà noté ce livre") {
+        return res.status(403).json({ message: error.message });
+      }
+      res
+        .status(500)
+        .json({ error: "Erreur lors de la création de la notation" });
     });
 };
 
@@ -86,6 +134,10 @@ exports.getAllBook = (req, res, next) => {
     .catch((error) => res.status(400).json({ error }));
 };
 
-exports.getBestRating = (req, res, next) => {};
-
-exports.createRating = (req, res,next) => {};
+exports.getBestRating = (req, res, next) => {
+  Book.find()
+    .sort({ averageRating: -1 })
+    .limit(3)
+    .then((books) => res.status(200).json(books))
+    .catch((error) => res.status(404).json({ error }));
+};
