@@ -1,19 +1,21 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const path = require('path');
+const path = require("path");
 
-const stuffRoutes = require("./routes/stuff");
+const booksRoutes = require("./routes/books");
 const userRoutes = require("./routes/user");
 
 mongoose
   .connect(
     "mongodb+srv://azerty-uiop:123456789lkl@cluster0.sqhkj3s.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
-    { useNewUrlParser: true, useUnifiedTopology: true }
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
   )
   .then(() => console.log("Connexion à MongoDB réussie !"))
   .catch(() => console.log("Connexion à MongoDB échouée !"));
-
 const app = express();
 
 app.use((req, res, next) => {
@@ -31,7 +33,7 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.json());
 
-app.use("/api/stuff", stuffRoutes);
+app.use("/api/books", booksRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/images", express.static(path.join(__dirname, "images")));
 
