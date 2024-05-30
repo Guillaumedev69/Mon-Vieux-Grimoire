@@ -5,6 +5,7 @@ const path = require("path");
 
 const booksRoutes = require("./routes/books");
 const userRoutes = require("./routes/user");
+require("dotenv").config();
 
 mongoose
   .connect(

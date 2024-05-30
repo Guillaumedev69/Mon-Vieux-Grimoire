@@ -1,6 +1,7 @@
+require("dotenv").config();
 const jwt = require("jsonwebtoken");
 
-const SECRET_KEY = process.env.JWT_SECRET || "RANDOM_TOKEN_SECRET";
+const SECRET_KEY = process.env.JWT_SECRET;
 
 module.exports = (req, res, next) => {
   console.log("Middleware appelé");
