@@ -4,8 +4,6 @@ const jwt = require("jsonwebtoken");
 const SECRET_KEY = process.env.JWT_SECRET;
 
 module.exports = (req, res, next) => {
-  console.log("Middleware appelé");
-
   try {
     const authHeader = req.headers.authorization;
 
