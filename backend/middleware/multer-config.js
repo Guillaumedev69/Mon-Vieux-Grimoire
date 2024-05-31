@@ -3,14 +3,14 @@ const sharp = require("sharp");
 const path = require("path");
 const fs = require("fs");
 
+const TARGET_WIDTH = Math.round(12.87675 * 16);
+const TARGET_HEIGHT = Math.round(16.27619 * 16);
+
 const MIME_TYPES = {
   "image/jpg": "jpg",
   "image/jpeg": "jpg",
   "image/png": "png",
 };
-
-const widthInPixels = Math.round(12.87 * 16);
-const heightInPixels = Math.round(16.27 * 16);
 
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
@@ -25,13 +25,52 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage }).single("image");
 
-const deleteImage = (filePath) => {
-  fs.unlink(filePath, (err) => {
+const deleteOldImage = (newFileName) => {
+  const imagesDir = path.resolve(__dirname, "../images");
+
+  fs.readdir(imagesDir, (err, files) => {
     if (err) {
-      console.error(`Failed to delete image at ${filePath}:`, err.message);
+      console.error("Error reading directory:", err);
+      return;
     }
+
+    console.log("Current files in directory:", files);
+
+    const baseName = newFileName
+      .split(".")
+      .slice(0, -1)
+      .join(".")
+      .replace(/\d+$/, "");
+
+    files.forEach((file) => {
+      const fileBaseName = file
+        .split(".")
+        .slice(0, -1)
+        .join(".")
+        .replace(/\d+$/, "");
+      const fileExtension = file.split(".").pop();
+
+      if (
+        (fileBaseName === baseName || fileBaseName === `resized-${baseName}`) &&
+        file !== newFileName
+      ) {
+        const filePath = path.join(imagesDir, file);
+        console.log(`Deleting file: ${file}`);
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error(
+              `Failed to delete image at ${filePath}:`,
+              err.message
+            );
+            return;
+          }
+          console.log(`Successfully deleted image at ${filePath}`);
+        });
+      }
+    });
   });
 };
+
 
 module.exports = (req, res, next) => {
   upload(req, res, (err) => {
@@ -43,30 +82,30 @@ module.exports = (req, res, next) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const filePath = path.join("images", req.file.filename);
-    const outputFilePath = path.join("images", "resized-" + req.file.filename);
+    const newFileName = req.file.filename;
 
-    sharp(filePath)
-      .resize(widthInPixels, heightInPixels)
-      .toFormat(req.file.mimetype.split('/')[1], {
-        quality: 90,
-        progressive: true,
-        compressionLevel: 9,
+    deleteOldImage(newFileName);
+
+    const uploadedFilePath = path.join("images", newFileName);
+    const outputFilePath = path.join("images", "resized-" + newFileName);
+
+
+    sharp(uploadedFilePath)
+      .resize({
+        width: TARGET_WIDTH,
+        height: TARGET_HEIGHT,
       })
       .toFile(outputFilePath, (err, info) => {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
 
-        // Delete the original file after the resized file is created
-        setTimeout(() => deleteImage(filePath), 1000);
 
-        // Attach the resized image path to the request object
         req.file.path = outputFilePath;
-        req.file.filename = "resized-" + req.file.filename;
+        req.file.filename = "resized-" + newFileName;
+
+
         next();
       });
   });
 };
-
-module.exports.deleteImage = deleteImage;
