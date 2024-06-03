@@ -71,7 +71,6 @@ const deleteOldImage = (newFileName) => {
   });
 };
 
-
 module.exports = (req, res, next) => {
   upload(req, res, (err) => {
     if (err) {
@@ -89,7 +88,6 @@ module.exports = (req, res, next) => {
     const uploadedFilePath = path.join("images", newFileName);
     const outputFilePath = path.join("images", "resized-" + newFileName);
 
-
     sharp(uploadedFilePath)
       .resize({
         width: TARGET_WIDTH,
@@ -100,12 +98,12 @@ module.exports = (req, res, next) => {
           return res.status(500).json({ error: err.message });
         }
 
-
         req.file.path = outputFilePath;
         req.file.filename = "resized-" + newFileName;
-
 
         next();
       });
   });
 };
+
+//fs.unlinkSync(originalImagePath);//
