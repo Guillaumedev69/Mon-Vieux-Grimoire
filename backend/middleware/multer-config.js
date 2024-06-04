@@ -12,16 +12,7 @@ const MIME_TYPES = {
   "image/png": "png",
 };
 
-const storage = multer.diskStorage({
-  destination: (req, file, callback) => {
-    callback(null, "images");
-  },
-  filename: (req, file, callback) => {
-    const name = file.originalname.split(" ").join("_");
-    const extension = MIME_TYPES[file.mimetype];
-    callback(null, name + Date.now() + "." + extension);
-  },
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({ storage }).single("image");
 
@@ -58,10 +49,7 @@ const deleteOldImage = (newFileName) => {
         console.log(`Deleting file: ${file}`);
         fs.unlink(filePath, (err) => {
           if (err) {
-            console.error(
-              `Failed to delete image at ${filePath}:`,
-              err.message
-            );
+            console.error(`Failed to delete image at ${filePath}:`, err.message);
             return;
           }
           console.log(`Successfully deleted image at ${filePath}`);
@@ -81,14 +69,13 @@ module.exports = (req, res, next) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const newFileName = req.file.filename;
+    const newFileName = req.file.originalname.split(" ").join("_") + Date.now() + "." + MIME_TYPES[req.file.mimetype];
 
     deleteOldImage(newFileName);
 
-    const uploadedFilePath = path.join("images", newFileName);
     const outputFilePath = path.join("images", "resized-" + newFileName);
 
-    sharp(uploadedFilePath)
+    sharp(req.file.buffer)
       .resize({
         width: TARGET_WIDTH,
         height: TARGET_HEIGHT,
@@ -105,5 +92,3 @@ module.exports = (req, res, next) => {
       });
   });
 };
-
-//fs.unlinkSync(originalImagePath);//
