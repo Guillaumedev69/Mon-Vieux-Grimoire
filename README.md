@@ -3,7 +3,7 @@
 
 - Création de la partie Backend
 - Création des routes
-- Création de la base de donées avec MongoDB
+- Création de la base de données avec MongoDB
 - Utilisation de Express/Node.js
 - Gestion du token et de l'URL de la Database
 - Utilisation de Multer/Sharp pour la gestion d'ajout d'images
