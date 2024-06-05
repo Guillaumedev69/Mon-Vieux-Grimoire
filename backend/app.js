@@ -12,7 +12,7 @@ mongoose
     process.env.DATABASE_URL
   )
   .then(() => console.log("Connexion à MongoDB réussie !"))
-  .catch(() => console.log("Connexion à MongoDB échouée !"));
+  .catch((error) => console.log(error));
 const app = express();
 
 app.use((req, res, next) => {
